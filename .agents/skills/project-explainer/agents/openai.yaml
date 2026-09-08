@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Explainer"
+  short_description: "Map a codebase into clear project documentation"
+  default_prompt: "Use $project-explainer to explain this repository, including its stack, folders, files, setup, runtime behavior, and what users see."
