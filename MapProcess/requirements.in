@@ -1,0 +1,9 @@
+Django==5.2.4
+biopython==1.85
+html2text==2025.4.15
+numpy==2.2.6
+openpyxl==3.1.5
+pandas==2.3.1
+PyMySQL==1.1.2
+requests==2.32.4
+xmltodict==0.14.2

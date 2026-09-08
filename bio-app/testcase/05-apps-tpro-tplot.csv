@@ -1,0 +1,29 @@
+用例ID,模块,标题,前置条件,步骤,预期结果,优先级
+TC-APP-001,计算应用,Apps 列表加载,"已登录",1. 访问 /#/apps,展示应用卡片（名称/描述/作者等）；支持分页（每页约12）,P0
+TC-APP-002,计算应用,Apps 关键字搜索,"已登录；存在多个应用",1. 在 Search apps... 输入 title/description/author 关键字,列表本地过滤匹配项,P1
+TC-APP-003,计算应用,应用星标切换,"已登录",1. 点击某应用星标;2. 再次点击取消,星标状态切换成功并持久（刷新后保持）,P1
+TC-APP-004,计算应用,点击有路由应用跳转,"已登录；应用配置了 route（如 T-Pro）",1. 点击该应用卡片,跳转到对应路由页,P0
+TC-APP-005,计算应用,无路由应用 Coming soon,"已登录；存在无 route 应用",1. 点击该应用卡片,提示 Coming soon；不进入空白错误页,P1
+TC-TPRO-001,计算应用,打开 T-Pro 主页,"已登录；T-Pro 外部服务可达更佳",1. 访问 /#/t-pro,展示 Current Species/Select Species、统计入口、Operations 操作区,P0
+TC-TPRO-002,计算应用,切换与添加物种,"已登录；T-Pro 可用",1. 使用 Select Species 切换;2. 必要时 Add Species,物种切换成功；新增物种后可选中,P1
+TC-TPRO-003,计算应用,统计入口打开资源管理,"已登录",1. 点击 Expression/Gene Dataset 或 predictor 等统计入口,打开 Managing … 资源管理类弹窗/面板,P1
+TC-TPRO-004,计算应用,Design new promoters 打开弹窗,"已登录",1. 点击 Design new promoters,打开 Designing a promoter sequence 弹窗；主按钮为 Design,P0
+TC-TPRO-005,计算应用,Predict 打开弹窗,"已登录",1. 点击 Predict,打开 Predicting promoter strengths；主按钮为 Predict,P0
+TC-TPRO-006,计算应用,Generate 打开弹窗,"已登录",1. 点击 Generate,打开 Generating promoter sequences；主按钮为 Generate,P0
+TC-TPRO-007,计算应用,Design 库相关入口,"已登录",1. 打开 Generating promoter libraries（若入口可达）,弹窗标题正确；主按钮为 Generate,P1
+TC-TPRO-008,计算应用,Optimize 打开弹窗,"已登录",1. 点击 Optimize,打开 Optimizing transcriptional regulation；主按钮为 Optimize,P0
+TC-TPRO-009,计算应用,T-Pro 参数必填校验,"已登录；打开任一操作弹窗",1. 必填项留空直接提交,前端校验拦截；不创建任务,P0
+TC-TPRO-010,计算应用,T-Pro 提交任务并跳转详情,"已登录；T-Pro 与后端任务服务可用；参数合法",1. 填写合法参数提交;2. 观察排队提示;3. 等待完成或跳转,创建任务（appId=t-pro）；完成后进入 /#/tasks/:id；失败时可 View details 进入同路径,P0
+TC-TPRO-011,计算应用,任务详情展示 T-Pro 结果,"存在已完成的 T-Pro 任务",1. 打开 /#/tasks/:id,按任务类型展示对应结果组件（表格/可视化）；异常结果有明确提示,P0
+TC-TPRO-012,计算应用,运行中任务状态轮询,"存在 pending/running 的自有任务",1. 打开任务详情并等待,状态在排队/运行间更新；完成后变为 completed 或 failed,P0
+TC-TPRO-013,计算应用,Owner 取消任务,"存在自有 pending/running 任务",1. 在详情页点击 Cancel Task 并确认,任务变为 cancelled；停止轮询推进,P1
+TC-TPRO-014,计算应用,T-Pro 外部服务不可用,"已登录；可关闭 T-Pro 服务",1. 提交需调用外部服务的任务,任务失败或创建后失败；前端有错误提示可查看详情,P1
+TC-TPRO-015,计算应用,结果无独立文件下载 API,"存在已完成 T-Pro 任务",1. 在结果区查找专用结果文件下载,按当前实现：结果以表格/组件展示；无独立结果文件下载 API（勿期望通用 Download 全覆盖）,P2
+TC-TPLOT-001,计算应用,打开 TPlot 四面板,"已登录；TPlot/WebDatabase 外部服务配置正确",1. 访问 /#/tplot,可切换 Dimer Plot、Fitting、Optimization、Assembly 四面板,P0
+TC-TPLOT-002,计算应用,Dimer Plot 嵌入展示,"已登录；TFPlot 服务可用",1. 打开 Dimer Plot 面板,嵌入图/iframe 正常加载或给出服务不可用提示,P1
+TC-TPLOT-003,计算应用,Fitting 提交流程,"已登录；准备合法 CSV；服务可用",1. 选择 Algorithm、设置 I0;2. 上传 CSV（可先下模板）;3. 点击 Fitting,请求发出并展示拟合结果或错误信息；Reset 可清空,P0
+TC-TPLOT-004,计算应用,Optimization 提交流程,"已登录；服务可用",1. 填写 α/β 等参数（LBD/DBD 可选）;2. 点击 Optimize,展示优化结果或错误提示,P0
+TC-TPLOT-005,计算应用,Assembly 依赖 Optimization,"已登录",1. 未完成 Optimization 时尝试 Assembly,按当前实现提示需先 Optimization 或无法完成装配,P1
+TC-TPLOT-006,计算应用,Assembly 执行与 Download,"已登录；已完成 Optimization；服务可用",1. 执行 Assembly;2. 尝试 Download,Assembly 有结果反馈；Download 行为以当前面板实现为准（成功下载或明确失败提示）,P1
+TC-TPLOT-007,计算应用,TPlot 外部服务不可达,"已登录；关闭 :8101/:8000 相关服务",1. 打开各面板并触发请求,页面不崩溃；展示网络/服务错误提示,P2
+TC-APP-006,计算应用,Apps 分页切换,"已登录；应用数超过一页",1. 切换 Apps 分页,列表刷新正确无重复/丢失异常,P2

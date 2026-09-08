@@ -1,0 +1,31 @@
+用例ID,模块,标题,前置条件,步骤,预期结果,优先级
+TC-WS-001,Workspace,打开 My Files,"已登录",1. 侧栏进入 Files 或访问 /#/files,展示 My Files 列表、Upload Files、Refresh、Workspace Storage 配额,P0
+TC-WS-002,Workspace,上传文件成功,"已登录；未超配额；准备合法文件",1. 点击 Upload Files 选择一个或多个文件;2. 等待上传完成;3. 点击 Refresh（如需）,文件出现在列表；配额占用增加,P0
+TC-WS-003,Workspace,上传超配额失败,"已登录；配额将满或已满",1. 上传超过剩余配额的大文件,上传失败并提示配额不足；列表不新增该文件,P1
+TC-WS-004,Workspace,文件类型筛选,"已登录；存在多种类型文件",1. 切换 All Types / Images / Documents 等筛选,列表按类型过滤正确,P1
+TC-WS-005,Workspace,文件名搜索,"已登录；存在多个文件",1. 在搜索框输入文件名关键字,列表过滤匹配文件,P1
+TC-WS-006,Workspace,下载文件,"已登录；存在自有文件",1. 点击行 Download,浏览器开始下载对应文件,P0
+TC-WS-007,Workspace,删除单个文件,"已登录；存在可删测试文件",1. 点击行 Delete 并确认,文件从列表移除；配额回升（或刷新后正确）,P0
+TC-WS-008,Workspace,批量删除文件,"已登录；存在多个可删文件",1. 勾选多个文件;2. 点击 Delete Selected 并确认,选中文件全部删除,P1
+TC-WS-009,Workspace,文件列表分页,"已登录；文件数超过一页",1. 翻页浏览,分页正常；数据正确,P2
+TC-WS-010,Workspace,打开任务列表,"已登录",1. 访问 /#/tasks,展示任务表（Task ID/App/Name/Date/Status/Creator）；含 ALL/Mine/Sharing Tab,P0
+TC-WS-011,Workspace,任务 Tab 过滤,"已登录；存在自有与共享任务更佳",1. 切换 ALL / Mine / Sharing,列表范围随 Tab 变化,P0
+TC-WS-012,Workspace,任务关键字搜索,"已登录；存在多个任务",1. 在搜索框输入关键字,列表过滤匹配任务,P1
+TC-WS-013,Workspace,查看任务详情,"已登录；存在可查看任务",1. 行菜单选择 View,进入 /#/tasks/:id 展示元数据与状态,P0
+TC-WS-014,Workspace,任务详情返回列表,"已登录；在任务详情页",1. 点击 Back to Tasks,返回 /#/tasks,P1
+TC-WS-015,Workspace,编辑自有任务名称,"已登录；存在 isMine 任务",1. 行菜单 Edit 修改名称并保存,名称更新成功；共享任务无 Edit 或不可改,P1
+TC-WS-016,Workspace,删除自有任务,"已登录；存在可删自有任务",1. 行菜单 Delete 并确认,任务从列表移除,P0
+TC-WS-017,Workspace,共享任务只读限制,"已登录；存在他人分享给我的任务",1. 查看 Sharing 范围任务;2. 尝试 Share/Edit/Delete,显示 Shared/Read only 标识；不可再次分享；无 Owner 级编辑删除（或操作被拒绝）,P0
+TC-WS-018,Workspace,分享自有任务给用户,"已登录；存在另一用户账号",1. 对 isMine 任务打开 Share;2. 搜索用户并分享,分享成功；对方在 Sharing/To Me 或 Tasks Sharing 可见,P0
+TC-WS-019,Workspace,取消任务分享,"已登录；已分享任务给他人",1. 在分享管理中取消对应用户分享,对方失去访问；From Me 列表更新,P0
+TC-WS-020,Workspace,任务详情权限标识,"已登录；分别打开自有与只读共享任务",1. 查看 Permission 字段,自有为 Owner；共享为 Read only,P1
+TC-WS-021,Workspace,运行中任务详情轮询,"存在自有 pending/running 任务",1. 打开详情页停留观察,状态自动刷新直至终态,P1
+TC-WS-022,Workspace,失败任务展示错误信息,"存在 failed 任务",1. 打开失败任务详情,展示失败原因/错误信息可读,P1
+TC-WS-023,Workspace,打开 Sharing 页,"已登录",1. 访问 /#/sharing,展示 To Me / From Me（默认 From Me）与搜索框、分享卡片,P0
+TC-WS-024,Workspace,Sharing Tab 切换,"已登录；双向分享数据存在更佳",1. 切换 To Me / From Me,列表内容随方向切换,P0
+TC-WS-025,Workspace,Sharing 搜索,"已登录；存在多条分享",1. 在 Search... 输入关键字,卡片列表过滤,P2
+TC-WS-026,Workspace,From Me 取消分享,"已登录；存在 From Me 分享",1. 在 From Me 卡片点击 delete/unshare 并确认,分享移除；对方不再可见,P0
+TC-WS-027,Workspace,To Me 不可删除分享卡,"已登录；存在 To Me 分享",1. 查看 To Me 卡片操作,无 delete/unshare 或不可撤销他人发起的分享（按当前实现）,P1
+TC-WS-028,Workspace,Sharing 卡跳转任务列表筛选,"已登录；存在分享关系",1. 点击卡片 View 类入口,跳转 /#/tasks 并带 scope/sharedByUserId 或 sharedWithUserId 等筛选参数,P1
+TC-WS-029,Workspace,未登录访问 Files/Tasks/Sharing,"无会话",1. 分别访问 /#/files、/#/tasks、/#/sharing,均跳转登录页,P0
+TC-WS-030,Workspace,任务列表空态,"已登录新账号无任务",1. 打开 /#/tasks,展示空列表/空态无报错,P2

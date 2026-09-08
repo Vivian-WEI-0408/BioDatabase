@@ -1,0 +1,34 @@
+用例ID,模块,标题,前置条件,步骤,预期结果,优先级
+TC-AUTH-001,用户系统,未登录访问受保护页面跳转登录,"浏览器无有效登录会话",1. 访问 /#/dashboard;2. 观察地址栏与页面,跳转至 /#/signin?redirect=/dashboard；侧栏不显示；展示登录表单,P0
+TC-AUTH-002,用户系统,已登录访问登录页跳转首页,"已用有效账号登录",1. 访问 /#/signin;2. 观察跳转,自动跳转至 /#/dashboard,P1
+TC-AUTH-003,用户系统,已登录访问注册页跳转首页,"已用有效账号登录",1. 访问 /#/signup;2. 观察跳转,自动跳转至 /#/dashboard,P1
+TC-AUTH-004,用户系统,登录页必填校验-空邮箱,"打开 /#/signin",1. 邮箱留空;2. 输入任意密码;3. 点击 Log in,弹出校验提示要求填写邮箱；不发起登录请求,P0
+TC-AUTH-005,用户系统,登录页必填校验-非法邮箱,"打开 /#/signin",1. 输入非法邮箱格式;2. 输入密码;3. 点击 Log in,提示邮箱格式无效；不登录成功,P1
+TC-AUTH-006,用户系统,登录页必填校验-空密码,"打开 /#/signin",1. 输入合法邮箱;2. 密码留空;3. 点击 Log in,提示需填写密码；不登录成功,P0
+TC-AUTH-007,用户系统,登录成功进入Dashboard,"存在启用状态的测试账号",1. 打开 /#/signin;2. 输入正确 Email Address 与 Password;3. 点击 Log in,登录成功；进入 /#/dashboard；侧栏显示用户信息,P0
+TC-AUTH-008,用户系统,登录失败-账号不存在,"打开 /#/signin",1. 输入未注册邮箱与任意密码;2. 点击 Log in,提示 Account not found 或等价错误；仍停留登录页,P0
+TC-AUTH-009,用户系统,登录失败-密码错误,"存在启用账号",1. 输入正确邮箱与错误密码;2. 点击 Log in,提示 Incorrect password 或等价错误；不进入系统,P0
+TC-AUTH-010,用户系统,登录失败-账号已禁用,"存在被管理员 Disable 的账号",1. 用该账号登录;2. 点击 Log in,提示账号被禁用（client disabled）或等价错误；无法进入系统,P0
+TC-AUTH-011,用户系统,Remember me 记住邮箱,"打开 /#/signin",1. 勾选 Remember me;2. 成功登录后退出;3. 再次打开登录页,Email Address 自动回填上次邮箱；密码不回填,P2
+TC-AUTH-012,用户系统,登录页跳转注册,"打开 /#/signin",1. 点击 Sign up 链接,进入 /#/signup 注册页,P1
+TC-AUTH-013,用户系统,注册必填与条款校验,"打开 /#/signup",1. 不填 Full Name/Email/Organization/Password 或不勾选条款;2. 点击 Create account,给出对应必填/同意条款校验提示；不创建账号,P0
+TC-AUTH-014,用户系统,注册密码长度校验,"打开 /#/signup",1. 填写合法姓名邮箱组织;2. 密码少于6位;3. 勾选条款;4. 点击 Create account,提示密码至少6位；注册失败,P1
+TC-AUTH-015,用户系统,注册邮箱格式校验,"打开 /#/signup",1. 填写非法邮箱;2. 其余合法并勾选条款;3. 点击 Create account,提示邮箱格式无效；不创建账号,P1
+TC-AUTH-016,用户系统,注册成功并自动登录,"邮箱未被占用；SMTP 非必须",1. 填写合法 Full Name、Email、Organization、Password(≥6);2. 勾选 terms;3. 点击 Create account,创建成功并自动登录；进入 /#/dashboard,P0
+TC-AUTH-017,用户系统,注册页条款链接提示不可用,"打开 /#/signup",1. 点击 terms 或 privacy 链接,弹出「not available yet」类提示；不打开独立条款页,P2
+TC-AUTH-018,用户系统,注册页返回登录,"打开 /#/signup",1. 点击 Log in 链接,进入 /#/signin,P1
+TC-AUTH-019,用户系统,找回密码-发送验证码,"打开 /#/signin；SMTP 可用",1. 点击 Reset Password?;2. 在 Recover 弹窗输入已注册邮箱;3. 点击 Reset Your Password,进入验证码步骤；提示验证码已发送,P0
+TC-AUTH-020,用户系统,找回密码-重置成功,"已收到有效验证码",1. 输入 Verification Code、New Password、Confirm（≥6且一致）;2. 点击 Reset,密码重置成功；可用新密码登录,P0
+TC-AUTH-021,用户系统,找回密码-两次密码不一致,"Recover 第二步",1. New Password 与 Confirm 不一致;2. 点击 Reset,提示两次密码不一致；密码未变更,P1
+TC-AUTH-022,用户系统,找回密码-返回邮箱步骤,"Recover 第二步",1. 点击 Back to email,回到输入邮箱步骤,P2
+TC-AUTH-023,用户系统,登出清除会话,"已登录任意账号",1. 点击侧栏退出图标;2. 尝试访问 /#/dashboard,调用登出后跳转 /#/signin；再次访问受保护页需重新登录,P0
+TC-AUTH-024,用户系统,Settings 打开三卡片,"已登录",1. 侧栏进入 Settings 或访问 /#/settings,展示 Profile、Modify Password、Change Email 三块设置卡片,P0
+TC-AUTH-025,用户系统,更新个人资料成功,"已登录",1. 修改 First Name（必填）及 Title/Organization/Phone/Gender;2. 点击 Save Profile,保存成功提示；刷新后资料保持更新,P0
+TC-AUTH-026,用户系统,上传头像成功,"已登录；准备 ≤5MB 的 png/jpeg/webp/gif",1. 在 Profile 选择合法图片上传;2. 保存或自动更新后刷新,头像更新成功并在侧栏显示,P1
+TC-AUTH-027,用户系统,上传头像超限或格式错误,"已登录",1. 选择 >5MB 或非图片格式文件,给出格式/大小限制提示；头像不变,P2
+TC-AUTH-028,用户系统,Profile 邮箱只读,"已登录",1. 查看 Profile 中 Email 字段,Email 只读不可直接修改（需走 Change Email）,P1
+TC-AUTH-029,用户系统,修改密码成功,"已登录；知悉当前密码",1. 填写 Current/New/Confirm（新密码≥6且一致）;2. 点击 Update Password,修改成功；旧密码失效新密码可登录,P0
+TC-AUTH-030,用户系统,修改密码-当前密码错误,"已登录",1. Current 填错;2. 新密码合法一致;3. 点击 Update Password,提示当前密码错误；密码未变更,P1
+TC-AUTH-031,用户系统,修改邮箱完整流程,"已登录；SMTP 可用；新邮箱未占用",1. 对当前邮箱 Send 验证码并填写;2. 填写 New Email 并 Send 验证码;3. 点击 Update Email,邮箱更新成功；可用新邮箱登录,P0
+TC-AUTH-032,用户系统,修改邮箱发送验证码倒计时,"已登录；SMTP 可用",1. 点击 Send 发送当前或新邮箱验证码,按钮进入约60秒倒计时不可连点,P2
+TC-AUTH-033,用户系统,登录后不消费 redirect 参数,"无会话",1. 访问 /#/tasks 被重定向到带 redirect 的登录页;2. 成功登录,按当前实现进入 /#/dashboard（不自动回到原 redirect 路径）,P2

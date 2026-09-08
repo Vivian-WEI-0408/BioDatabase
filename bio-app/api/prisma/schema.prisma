@@ -1,0 +1,596 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id               Int       @id @default(autoincrement()) @db.Int
+  name             String    @default("") @db.VarChar(100)
+  email            String    @unique(map: "idx_users_email") @db.VarChar(255)
+  password         String    @db.VarChar(255)
+  token            String    @default("") @db.VarChar(128)
+  token_expires_at DateTime? @db.DateTime(0)
+  status           Int       @default(1)
+  role             Int       @default(0)
+  title            String    @default("") @db.VarChar(100)
+  organization     String    @default("") @db.VarChar(255)
+  phone            String    @default("") @db.VarChar(32)
+  gender           String    @default("") @db.VarChar(20)
+  avatar           String    @default("") @db.VarChar(512)
+  last_login_time  DateTime? @db.DateTime(0)
+  created_at       DateTime  @default(now()) @db.Timestamp(0)
+  updated_at       DateTime  @updatedAt @db.Timestamp(0)
+
+  favorites          UserAppFavorite[]
+  tasks              Task[]
+  tasks_shared       Task[]                @relation("SharedTasks")
+  ownedTaskShares    TaskShare[]           @relation("OwnedTaskShares")
+  receivedTaskShares TaskShare[]           @relation("ReceivedTaskShares")
+  notifications      Notification[]
+  todos              Todo[]
+  storage            UserStorage?
+  files              UserFile[]
+  permissions        UserPermission[]
+  adminAuditLogs     AdminAuditLog[]       @relation("AdminAuditLogs")
+  feedbacks          Feedback[]
+  repositories       TemporaryRepository[]
+
+  @@index([token], map: "idx_users_token")
+  @@map("users")
+}
+
+model Feedback {
+  id            Int       @id @default(autoincrement())
+  user_id       Int
+  type          String    @db.VarChar(32)
+  content       String    @db.Text
+  page_url      String    @db.VarChar(2048)
+  contact_name  String    @default("") @db.VarChar(100)
+  contact_org   String    @default("") @db.VarChar(255)
+  contact_phone String    @default("") @db.VarChar(32)
+  contact_email String    @default("") @db.VarChar(255)
+  images_json   String?   @db.LongText
+  status        String    @default("pending") @db.VarChar(32)
+  created_at    DateTime  @default(now()) @db.Timestamp(0)
+  updated_at    DateTime  @updatedAt @db.Timestamp(0)
+  completed_at  DateTime? @db.DateTime(0)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "idx_feedbacks_user_id")
+  @@index([status], map: "idx_feedbacks_status")
+  @@index([created_at], map: "idx_feedbacks_created_at")
+  @@map("feedbacks")
+}
+
+model UserPermission {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  resource   String   @db.VarChar(64)
+  action     String   @db.VarChar(64)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, resource, action], map: "uk_user_permissions_user_resource_action")
+  @@index([user_id], map: "idx_user_permissions_user_id")
+  @@map("user_permissions")
+}
+
+model SystemSetting {
+  key           String   @id @db.VarChar(128)
+  value         String   @db.LongText
+  type          String   @default("string") @db.VarChar(32)
+  setting_group String   @default("default") @map("group") @db.VarChar(64)
+  description   String   @default("") @db.VarChar(512)
+  updated_at    DateTime @updatedAt @db.Timestamp(0)
+
+  @@map("system_settings")
+}
+
+model AdminAuditLog {
+  id            Int      @id @default(autoincrement())
+  admin_user_id Int
+  action        String   @db.VarChar(128)
+  resource      String   @db.VarChar(128)
+  resource_id   String   @default("") @db.VarChar(128)
+  detail_json   String?  @db.LongText
+  ip            String   @default("") @db.VarChar(64)
+  created_at    DateTime @default(now()) @db.Timestamp(0)
+
+  admin_user User @relation("AdminAuditLogs", fields: [admin_user_id], references: [id], onDelete: Cascade)
+
+  @@index([admin_user_id], map: "idx_admin_audit_logs_admin_user_id")
+  @@index([resource, resource_id], map: "idx_admin_audit_logs_resource")
+  @@map("admin_audit_logs")
+}
+
+model App {
+  id          String   @id @db.VarChar(64)
+  title       String   @db.VarChar(255)
+  description String   @db.Text
+  icon        String   @db.VarChar(512)
+  route       String   @db.VarChar(255)
+  author      String   @db.VarChar(100)
+  app_color   String   @db.VarChar(32)
+  sort_order  Int      @default(0)
+  status      Int      @default(1)
+  created_at  DateTime @default(now()) @db.Timestamp(0)
+
+  favorites UserAppFavorite[]
+  tasks     Task[]
+
+  @@map("apps")
+}
+
+model UserAppFavorite {
+  id      Int    @id @default(autoincrement())
+  user_id Int
+  app_id  String @db.VarChar(64)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  app  App  @relation(fields: [app_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, app_id])
+  @@map("user_app_favorites")
+}
+
+model Task {
+  id                  Int       @id @default(autoincrement())
+  user_id             Int
+  app_id              String    @db.VarChar(64)
+  name                String    @db.VarChar(255)
+  status              String    @db.VarChar(32)
+  scope               String    @db.VarChar(32)
+  operation           String    @default("") @db.VarChar(64)
+  params_json         String?   @db.LongText
+  result_json         String?   @db.LongText
+  error_msg           String?   @db.VarChar(512)
+  shared_with_user_id Int?
+  started_at          DateTime? @db.DateTime(0)
+  finished_at         DateTime? @db.DateTime(0)
+  created_at          DateTime  @default(now()) @db.Timestamp(0)
+
+  user        User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  app         App         @relation(fields: [app_id], references: [id])
+  shared_with User?       @relation("SharedTasks", fields: [shared_with_user_id], references: [id])
+  shares      TaskShare[]
+
+  @@index([user_id], map: "idx_tasks_user_id")
+  @@index([app_id], map: "idx_tasks_app_id")
+  @@index([status], map: "idx_tasks_status")
+  @@map("tasks")
+}
+
+model TaskShare {
+  id             Int      @id @default(autoincrement())
+  task_id        Int
+  owner_user_id  Int
+  target_user_id Int
+  permission     String   @default("read") @db.VarChar(32)
+  created_at     DateTime @default(now()) @db.Timestamp(0)
+
+  task   Task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  owner  User @relation("OwnedTaskShares", fields: [owner_user_id], references: [id], onDelete: Cascade)
+  target User @relation("ReceivedTaskShares", fields: [target_user_id], references: [id], onDelete: Cascade)
+
+  @@unique([task_id, target_user_id], map: "uk_task_shares_task_target")
+  @@index([owner_user_id], map: "idx_task_shares_owner_user_id")
+  @@index([target_user_id], map: "idx_task_shares_target_user_id")
+  @@map("task_shares")
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  tag        String   @db.VarChar(100)
+  tag_color  String   @db.VarChar(32)
+  message    String   @db.VarChar(512)
+  task_id    String?  @db.VarChar(32)
+  from_user  String?  @db.VarChar(100)
+  read       Boolean  @default(false)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "idx_notifications_user_id")
+  @@map("notifications")
+}
+
+model Todo {
+  id         Int     @id @default(autoincrement())
+  user_id    Int
+  text       String  @db.VarChar(512)
+  highlight  String? @db.VarChar(100)
+  done       Boolean @default(false)
+  sort_order Int     @default(0)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "idx_todos_user_id")
+  @@map("todos")
+}
+
+model DocumentSection {
+  id               String  @id @db.VarChar(64)
+  title            String  @db.VarChar(255)
+  sort_order       Int     @default(0)
+  expanded_default Boolean @default(false)
+
+  pages DocumentPage[]
+
+  @@map("document_sections")
+}
+
+model DocumentPage {
+  id           String  @id @db.VarChar(64)
+  section_id   String  @db.VarChar(64)
+  title        String  @db.VarChar(255)
+  intro        String  @db.Text
+  hero_image   String? @db.VarChar(512)
+  content_html String  @db.LongText
+  sort_order   Int     @default(0)
+
+  section DocumentSection @relation(fields: [section_id], references: [id], onDelete: Cascade)
+
+  @@index([section_id], map: "idx_document_pages_section_id")
+  @@map("document_pages")
+}
+
+model UserStorage {
+  user_id  Int @id
+  used_mb  Int @default(0)
+  total_mb Int @default(1024)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("user_storage")
+}
+
+model UserFile {
+  id            Int      @id @default(autoincrement())
+  user_id       Int
+  original_name String   @db.VarChar(255)
+  stored_name   String   @db.VarChar(255)
+  relative_path String   @db.VarChar(512)
+  size_bytes    BigInt   @default(0)
+  mime_type     String   @default("") @db.VarChar(128)
+  extension     String   @default("") @db.VarChar(32)
+  category      String   @default("other") @db.VarChar(32)
+  created_at    DateTime @default(now()) @db.Timestamp(0)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, created_at], map: "idx_user_files_user_created")
+  @@index([user_id, category], map: "idx_user_files_user_category")
+  @@index([user_id, original_name], map: "idx_user_files_user_name")
+  @@map("user_files")
+}
+
+// --- Legacy component library tables (labdnadata) ---
+
+model PartTable {
+  partId            Int       @id @default(autoincrement()) @map("PartID")
+  name              String?   @map("Name") @db.VarChar(100)
+  alias             String?   @map("Alias") @db.VarChar(100)
+  lengthInLevel0    Int       @map("LengthInLevel0")
+  level0Sequence    String?   @map("Level0Sequence") @db.LongText
+  confirmedSequence String?   @map("ConfirmedSequence") @db.LongText
+  insertSequence    String?   @map("InsertSequence") @db.LongText
+  sourceOrganism    String?   @map("SourceOrganism") @db.LongText
+  reference         String?   @map("Reference") @db.LongText
+  note              String?   @map("Note") @db.LongText
+  type              Int       @map("Type")
+  user              String?   @map("User") @db.VarChar(50)
+  tag               String?   @db.VarChar(50)
+  uploadDate        DateTime? @map("uploaddate") @db.DateTime(6)
+  updateDate        DateTime? @map("updatedate") @db.DateTime(6)
+  externalSource    String?   @map("external_source") @db.VarChar(50)
+  externalId        String?   @map("external_id") @db.VarChar(100)
+  externalVersion   Int?      @map("external_version")
+  externalUpdatedAt DateTime? @map("external_updated_at") @db.DateTime(6)
+  syncStatus        String?   @map("sync_status") @db.VarChar(20)
+  deletedAt         DateTime? @map("deleted_at") @db.DateTime(6)
+
+  scar        PartScarTable?
+  features    PartFeatureTable[]
+  rpuEntries  PartRpuTable[]
+  parentLinks ParentPartTable[]
+
+  @@unique([name], map: "uk_parttable_name")
+  @@unique([externalSource, externalId], map: "uk_parttable_external_source_id")
+  @@index([deletedAt], map: "idx_parttable_deleted_at")
+  @@map("parttable")
+}
+
+model PartScarTable {
+  partScarId Int       @id @default(autoincrement()) @map("PartScarID")
+  bsmbi      String    @map("BsmBI") @db.VarChar(100)
+  bsai       String    @map("BsaI") @db.VarChar(100)
+  bbsi       String    @map("BbsI") @db.VarChar(100)
+  aari       String    @map("AarI") @db.VarChar(100)
+  sapi       String    @map("SapI") @db.VarChar(100)
+  partId     Int       @unique @map("part_id")
+  part       PartTable @relation(fields: [partId], references: [partId])
+
+  @@map("partscartable")
+}
+
+model PartFeatureTable {
+  pfid           Int       @id @default(autoincrement())
+  partId         Int       @map("partid")
+  featureStart   Int       @map("feature_start")
+  featureEnd     Int       @map("feature_end")
+  featureType    String    @map("feature_type") @db.VarChar(50)
+  featureLabel   String    @map("feature_label") @db.VarChar(50)
+  featureColor   String    @map("feature_color") @db.VarChar(50)
+  featureApeinfo String    @map("feature_apeinfo") @db.VarChar(50)
+  part           PartTable @relation(fields: [partId], references: [partId], onDelete: Cascade)
+
+  @@index([partId], map: "partid")
+  @@map("partfeaturetable")
+}
+
+model PartRpuTable {
+  prid       Int       @id @default(autoincrement()) @map("PRID")
+  rpu        Float     @map("RPU")
+  testStrain String?   @map("TestStrain") @db.VarChar(50)
+  note       String?   @map("Note") @db.VarChar(100)
+  partId     Int       @map("PartID")
+  part       PartTable @relation(fields: [partId], references: [partId])
+
+  @@index([partId], map: "partrputable_PartID_38704138_fk_parttable_PartID")
+  @@map("partrputable")
+}
+
+model DBDTable {
+  id   Int    @id @default(autoincrement()) @map("ID") @db.Int
+  name String @map("Name") @db.VarChar(20)
+  i0   Float  @map("I0") @db.Double
+  kd   Float  @db.Double
+
+  @@map("DBDTable")
+}
+
+model LBDDimerTable {
+  id   Int    @id @default(autoincrement()) @map("ID") @db.Int
+  name String @map("Name") @db.VarChar(20)
+  k1   Float  @db.Double
+  k2   Float  @db.Double
+  k3   Float  @db.Double
+  i    Float  @map("I") @db.Double
+
+  @@map("LBDDimerTable")
+}
+
+model LBDNRTable {
+  id   Int    @id @default(autoincrement()) @map("ID") @db.Int
+  name String @map("Name") @db.VarChar(20)
+  k1   Float  @db.Double
+  k2   Float  @db.Double
+  k3   Float  @db.Double
+  kx1  Float  @db.Double
+  kx2  Float  @db.Double
+
+  @@map("LBDNRTable")
+}
+
+model TemporaryRepository {
+  id                     String    @id @db.VarChar(50)
+  repository_create_time DateTime? @map("repositorycreate_time") @db.DateTime(6)
+  repository_update_time DateTime? @map("repositoryupdate_time") @db.DateTime(6)
+  repository_expire_time DateTime? @map("repositoryexpire_time") @db.DateTime(6)
+  data                   Json?
+  name                   String?   @db.VarChar(500)
+  note                   String?   @map("Note") @db.LongText
+  user_id                Int?      @map("userid")
+  alias                  String?   @db.VarChar(1000)
+  level                  Int?      @map("Level")
+  part_start_scar        String?   @db.VarChar(10)
+  part_end_scar          String?   @db.VarChar(10)
+
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id], map: "temporaryrepository_userid_idx")
+  @@map("temporaryrepository")
+}
+
+model BackboneTable {
+  id         Int       @id @default(autoincrement()) @map("ID")
+  name       String    @map("Name") @db.VarChar(20)
+  length     Int?      @map("Length")
+  sequence   String    @map("Sequence") @db.LongText
+  species    String?   @map("Species") @db.VarChar(50)
+  copyNumber String?   @map("CopyNumber") @db.VarChar(20)
+  notes      String?   @map("Notes") @db.LongText
+  alias      String?   @map("Alias") @db.VarChar(500)
+  user       String    @map("User") @db.VarChar(50)
+  tag        String?   @db.VarChar(50)
+  updateDate DateTime? @map("updatedate") @db.DateTime(6)
+  uploadDate DateTime? @map("uploaddate") @db.DateTime(6)
+  syncStatus String?   @map("sync_status") @db.VarChar(20)
+  deletedAt  DateTime? @map("deleted_at") @db.DateTime(6)
+
+  scar             BackboneScarTable?
+  features         BackboneFeatureTable[]
+  cultureFunctions BackboneCultureFunction[]
+  parentLinks      ParentBackboneTable[]
+
+  @@unique([name], map: "uk_backbonetable_name")
+  @@index([deletedAt], map: "idx_backbonetable_deleted_at")
+  @@map("backbonetable")
+}
+
+model BackboneCultureFunction {
+  bcfid           Int           @id @default(autoincrement())
+  functionContent String        @map("function_content") @db.VarChar(50)
+  functionType    String        @map("function_type") @db.VarChar(50)
+  backboneId      Int           @map("backbone_id")
+  backbone        BackboneTable @relation(fields: [backboneId], references: [id])
+
+  @@index([backboneId], map: "backbone_culture_fun_backbone_id_18db8cb5_fk_backbonet")
+  @@map("backbone_culture_functions")
+}
+
+model BackboneScarTable {
+  backboneScarId Int           @id @default(autoincrement()) @map("BackboneScarID")
+  bsmbi          String        @map("BsmBI") @db.VarChar(100)
+  bsai           String        @map("BsaI") @db.VarChar(100)
+  bbsi           String        @map("BbsI") @db.VarChar(100)
+  aari           String        @map("AarI") @db.VarChar(100)
+  sapi           String        @map("SapI") @db.VarChar(100)
+  backboneId     Int           @unique @map("BackboneID")
+  backbone       BackboneTable @relation(fields: [backboneId], references: [id])
+
+  @@map("backbonescartable")
+}
+
+model BackboneFeatureTable {
+  bfif           Int           @id @default(autoincrement())
+  backboneId     Int           @map("backboneid")
+  featureStart   Int           @map("feature_start")
+  featureEnd     Int           @map("feature_end")
+  featureType    String        @map("feature_type") @db.VarChar(50)
+  featureLabel   String        @map("feature_label") @db.VarChar(50)
+  featureColor   String        @map("feature_color") @db.VarChar(50)
+  featureApeinfo String        @map("feature_apeinfo") @db.VarChar(50)
+  backbone       BackboneTable @relation(fields: [backboneId], references: [id], onDelete: Cascade)
+
+  @@index([backboneId], map: "backboneid")
+  @@map("backbonefeaturetable")
+}
+
+model PlasmidNeed {
+  plasmidId               Int       @id @default(autoincrement()) @map("PlasmidID")
+  name                    String?   @map("Name") @db.VarChar(20)
+  level                   String    @map("Level") @db.VarChar(10)
+  length                  Int       @map("Length")
+  sequenceConfirm         String    @map("SequenceConfirm") @db.LongText
+  plate                   String?   @map("Plate") @db.VarChar(100)
+  state                   Int?      @map("State")
+  user                    String?   @map("User") @db.VarChar(100)
+  note                    String?   @map("Note") @db.VarChar(500)
+  alias                   String?   @map("Alias") @db.VarChar(500)
+  customParentInformation String?   @map("CustomParentInformation") @db.LongText
+  tag                     String?   @db.VarChar(50)
+  uploadDate              DateTime? @map("uploaddate") @db.DateTime(6)
+  updateDate              DateTime? @map("updatedate") @db.DateTime(6)
+  syncStatus              String?   @map("sync_status") @db.VarChar(20)
+  deletedAt               DateTime? @map("deleted_at") @db.DateTime(6)
+
+  scar                  PlasmidScarTable?
+  features              PlasmidFeatureTable[]
+  cultureFunctions      PlasmidCultureFunction[]
+  parentPartLinks       ParentPartTable[]
+  parentBackboneLinks   ParentBackboneTable[]
+  parentPlasmidAsChild  ParentPlasmidTable[]     @relation("SonPlasmid")
+  parentPlasmidAsParent ParentPlasmidTable[]     @relation("ParentPlasmid")
+
+  @@unique([name], map: "uk_plasmidneed_name")
+  @@index([deletedAt], map: "idx_plasmidneed_deleted_at")
+  @@map("plasmidneed")
+}
+
+model ExternalSyncState {
+  id              Int       @id @default(autoincrement())
+  source          String    @unique @db.VarChar(50)
+  cursor          String?   @db.VarChar(500)
+  lastSyncAt      DateTime? @map("last_sync_at") @db.DateTime(6)
+  lastSuccessAt   DateTime? @map("last_success_at") @db.DateTime(6)
+  lastError       String?   @map("last_error") @db.LongText
+  consecutiveFail Int       @default(0) @map("consecutive_fail")
+
+  @@map("external_sync_state")
+}
+
+model ExternalSyncLog {
+  id         Int      @id @default(autoincrement())
+  source     String   @db.VarChar(50)
+  externalId String?  @map("external_id") @db.VarChar(100)
+  action     String   @db.VarChar(20)
+  status     String   @db.VarChar(20)
+  message    String?  @db.LongText
+  createdAt  DateTime @default(now()) @map("created_at") @db.DateTime(6)
+
+  @@index([source, externalId], map: "idx_external_sync_log_source_id")
+  @@index([createdAt], map: "idx_external_sync_log_created_at")
+  @@map("external_sync_log")
+}
+
+model PlasmidCultureFunction {
+  pcfid           Int         @id @default(autoincrement())
+  functionContent String      @map("function_content") @db.VarChar(100)
+  functionType    String      @map("function_type") @db.VarChar(100)
+  plasmidId       Int         @map("plasmid_id")
+  plasmid         PlasmidNeed @relation(fields: [plasmidId], references: [plasmidId])
+
+  @@index([plasmidId], map: "plasmid_culture_func_plasmid_id_45f42b7d_fk_plasmidne")
+  @@map("plasmid_culture_functions")
+}
+
+model PlasmidScarTable {
+  plasmidScarId Int         @id @default(autoincrement()) @map("PlasmidScarID")
+  bsmbi         String      @map("BsmBI") @db.VarChar(100)
+  bsai          String      @map("BsaI") @db.VarChar(100)
+  bbsi          String      @map("BbsI") @db.VarChar(100)
+  aari          String      @map("AarI") @db.VarChar(100)
+  sapi          String      @map("SapI") @db.VarChar(100)
+  plasmidId     Int         @unique @map("PlasmidID")
+  plasmid       PlasmidNeed @relation(fields: [plasmidId], references: [plasmidId])
+
+  @@map("plasmidscartable")
+}
+
+model PlasmidFeatureTable {
+  pfid           Int         @id @default(autoincrement())
+  plasmidId      Int         @map("plasmidid")
+  featureStart   Int         @map("feature_start")
+  featureEnd     Int         @map("feature_end")
+  featureType    String      @map("feature_type") @db.VarChar(50)
+  featureLabel   String      @map("feature_label") @db.VarChar(50)
+  featureColor   String      @map("feature_color") @db.VarChar(50)
+  featureApeinfo String      @map("feature_apeinfo") @db.VarChar(50)
+  plasmid        PlasmidNeed @relation(fields: [plasmidId], references: [plasmidId], onDelete: Cascade)
+
+  @@index([plasmidId], map: "plasmidid")
+  @@map("plasmidfeaturetable")
+}
+
+model ParentPartTable {
+  ppid         Int         @id @default(autoincrement())
+  parentPartId Int         @map("parentpartid")
+  sonPlasmidId Int         @map("sonplasmidid")
+  parentPart   PartTable   @relation(fields: [parentPartId], references: [partId])
+  sonPlasmid   PlasmidNeed @relation(fields: [sonPlasmidId], references: [plasmidId])
+
+  @@index([parentPartId], map: "parentparttable_parentpartid_e52a2d31_fk_parttable_PartID")
+  @@index([sonPlasmidId], map: "parentparttable_sonplasmidid_5cf80f48_fk_plasmidneed_PlasmidID")
+  @@map("parentparttable")
+}
+
+model ParentBackboneTable {
+  pbid             Int           @id @default(autoincrement())
+  parentBackboneId Int           @map("parentbackboneid")
+  sonPlasmidId     Int           @map("sonplasmidid")
+  parentBackbone   BackboneTable @relation(fields: [parentBackboneId], references: [id])
+  sonPlasmid       PlasmidNeed   @relation(fields: [sonPlasmidId], references: [plasmidId])
+
+  @@index([parentBackboneId], map: "parentbackbonetable_parentbackboneid_6c2185fc_fk_backbonet")
+  @@index([sonPlasmidId], map: "parentbackbonetable_sonplasmidid_450c2527_fk_plasmidne")
+  @@map("parentbackbonetable")
+}
+
+model ParentPlasmidTable {
+  ppid            Int         @id @default(autoincrement()) @map("PPID")
+  parentPlasmidId Int         @map("ParentPlasmidID")
+  sonPlasmidId    Int         @map("SonPlasmidID")
+  parentPlasmid   PlasmidNeed @relation("ParentPlasmid", fields: [parentPlasmidId], references: [plasmidId])
+  sonPlasmid      PlasmidNeed @relation("SonPlasmid", fields: [sonPlasmidId], references: [plasmidId])
+
+  @@index([parentPlasmidId], map: "parentplasmidtable_ParentPlasmidID_629a6c71_fk_plasmidne")
+  @@index([sonPlasmidId], map: "parentplasmidtable_SonPlasmidID_eb0c2d6a_fk_plasmidne")
+  @@map("parentplasmidtable")
+}

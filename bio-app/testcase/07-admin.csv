@@ -1,0 +1,34 @@
+用例ID,模块,标题,前置条件,步骤,预期结果,优先级
+TC-ADM-001,后台管理,非管理员访问 Admin 被重定向,"已登录普通用户(role=0) 或数据管理员(role=1)",1. 直接访问 /#/admin,路由守卫重定向至 /#/dashboard；侧栏无 Admin Panel（role<9）,P0
+TC-ADM-002,后台管理,管理员进入后台,"已登录管理员(role≥9)",1. 侧栏点击 Admin Panel 或访问 /#/admin,进入后台；展示 Users/Files/Tasks/Apps/Documents/Settings/Feedback 等 Tab,P0
+TC-ADM-003,后台管理,无权限接口失败提示,"已登录但 role 被降级或 token 无管理权限（可模拟）",1. 打开 /#/admin 触发 admin/summary 失败,展示 Access Denied / 暂无后台管理权限类提示,P1
+TC-ADM-004,后台管理,Users-列表与搜索,"管理员已进入 Users Tab",1. 使用搜索/状态/角色筛选,用户列表按条件刷新,P0
+TC-ADM-005,后台管理,Users-禁用用户,"管理员；存在启用测试用户",1. 对该用户执行 Disable,用户状态变为禁用；该用户无法登录,P0
+TC-ADM-006,后台管理,Users-启用用户,"管理员；存在禁用测试用户",1. 执行 Enable,用户恢复启用并可登录,P0
+TC-ADM-007,后台管理,Users-修改角色为数据管理员,"管理员；存在普通测试用户",1. 将角色改为数据管理员,保存成功；该用户具备 Browse 编辑/删除与 Batch Upload 权限,P0
+TC-ADM-008,后台管理,Users-修改角色为管理员,"管理员；存在测试用户（勿锁死唯一管理员）",1. 将角色改为管理员,保存成功；该用户可见 Admin Panel,P1
+TC-ADM-009,后台管理,Users-修改角色为普通用户,"管理员；存在非关键测试管理员/数据管理员",1. 将角色改为普通用户,保存成功；其 Admin/Batch 等管理能力失效,P1
+TC-ADM-010,后台管理,Users-修改存储配额,"管理员",1. 点击用户 Storage 入口修改配额并保存,配额更新成功；Files 页配额展示同步,P1
+TC-ADM-011,后台管理,Users-查看详情,"管理员",1. 打开用户 Detail,展示用户详情；数据管理员说明可编删三表等信息可读,P2
+TC-ADM-012,后台管理,细粒度权限 UI 未对接,"管理员",1. 在 Users 界面查找独立权限矩阵配置 UI,按当前实现：角色分配可用；细粒度 permissions UI 未对接（勿当作已交付功能）,P2
+TC-ADM-013,后台管理,Files-筛选与预览,"管理员；存在用户文件",1. 在 Files Tab 按用户/类型筛选;2. 对文件 Preview（若支持）,列表过滤正确；预览可打开或给出不支持提示,P1
+TC-ADM-014,后台管理,Files-Execute Cleanup,"管理员",1. 执行 Cleanup 操作（按页面按钮文案）,按提示完成清理流程；无未处理异常,P2
+TC-ADM-015,后台管理,Tasks-列表筛选与详情,"管理员；系统中有任务",1. 在 Tasks Tab 筛选;2. 打开 Detail,展示任务详情与状态,P0
+TC-ADM-016,后台管理,Tasks-校正状态,"管理员；存在可改状态任务",1. 使用 Status 校正功能修改状态并保存,状态更新成功并在列表反映,P1
+TC-ADM-017,后台管理,Tasks-删除任务,"管理员；存在可删测试任务",1. 执行 Delete 并确认,任务删除成功,P1
+TC-ADM-018,后台管理,Apps-创建应用,"管理员",1. 点击 Create App;2. 填写必要字段保存,新应用出现在 Apps 列表；前端 /#/apps 可见（若启用）,P0
+TC-ADM-019,后台管理,Apps-编辑应用,"管理员；存在应用",1. 打开 Edit 修改名称/描述/路由等并保存,更新成功,P0
+TC-ADM-020,后台管理,Apps-启停应用,"管理员；存在应用",1. 切换应用启用/停用状态,状态保存成功；停用后前端入口行为符合配置（隐藏或 Coming soon）,P1
+TC-ADM-021,后台管理,Apps-保存排序,"管理员；存在多个应用",1. 调整排序后点击 Save Sort Order,排序持久化；刷新后顺序保持,P1
+TC-ADM-022,后台管理,Documents-创建 Section,"管理员",1. 在 Documents Tab 创建 Section,侧栏/树出现新章节,P0
+TC-ADM-023,后台管理,Documents-新增页面,"管理员；存在 Section",1. Add Page 并填写标题与内容保存,新页面可在 /#/document 打开,P0
+TC-ADM-024,后台管理,Documents-编辑页面,"管理员；存在页面",1. Edit Page 修改标题/HTML 内容并保存,文档中心展示更新后内容,P0
+TC-ADM-025,后台管理,Documents-删除页面或章节,"管理员；存在可删测试文档",1. Delete 页面或 Section 并确认,后台列表与文档中心树同步移除,P1
+TC-ADM-026,后台管理,Documents-HTML 编辑器可用,"管理员；编辑页面时",1. 使用 document-content-editor 编辑内容,编辑器可输入/格式化并成功保存,P1
+TC-ADM-027,后台管理,Settings-创建键值配置,"管理员",1. 在 Settings Tab Create 键值并保存,新配置出现在列表,P1
+TC-ADM-028,后台管理,Settings-编辑删除配置,"管理员；存在测试配置项",1. Edit 后保存;2. Delete 测试项,编辑与删除均成功,P1
+TC-ADM-029,后台管理,Feedback-列表筛选,"管理员；存在用户反馈",1. 在 Feedback Tab 按类型/状态筛选,列表过滤正确,P1
+TC-ADM-030,后台管理,Feedback-查看并完成,"管理员；存在未完成反馈",1. 打开 Detail;2. 执行 Complete,状态更新为完成；列表反映,P1
+TC-ADM-031,后台管理,管理员无 Feedback 侧栏入口,"已登录管理员",1. 查看主站侧栏,显示 Admin Panel；不显示普通用户 Feedback 入口（反馈在后台处理）,P2
+TC-ADM-032,后台管理,登出后无法访问 Admin,"曾以管理员登录后已登出",1. 访问 /#/admin,跳转登录页,P0
+TC-ADM-033,后台管理,Tab 切换状态保持合理,"管理员",1. 在多个 Admin Tab 间切换并返回 Users,各 Tab 可独立加载；无明显串数据,P2

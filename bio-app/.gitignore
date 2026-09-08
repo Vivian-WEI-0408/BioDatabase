@@ -1,0 +1,15 @@
+.cursor/
+node_modules/
+dev/
+sim.py
+.DS_Store/
+.DS_Store
+**/.DS_Store
+dist/
+refs/
+.env
+.env.*
+!.env.example
+api/.env
+api/.env.*
+!api/.env.example

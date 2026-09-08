@@ -1,0 +1,29 @@
+用例ID,模块,标题,前置条件,步骤,预期结果,优先级
+TC-NAV-001,全局导航,侧栏登录后显示完整菜单,"已登录普通用户(role=0)",1. 登录后观察左侧菜单,显示 Dashboard、Apps、Tasks、DataSets、Files、Document、Sharing、Notification、Settings；显示 Feedback；不显示 Admin Panel,P0
+TC-NAV-002,全局导航,管理员侧栏显示 Admin Panel,"已登录管理员(role≥9)",1. 登录后观察侧栏,显示 Admin Panel；不显示 Feedback 入口,P0
+TC-NAV-003,全局导航,侧栏品牌与用户信息,"已登录",1. 查看侧栏顶部 Logo 与底部用户区,显示「标准元件库」；底部显示用户名/头像；title 为空时显示 Developer,P1
+TC-NAV-004,全局导航,菜单跳转-Dashboard,"已登录",1. 点击侧栏 Dashboard,进入 /#/dashboard 且菜单高亮,P0
+TC-NAV-005,全局导航,菜单跳转-Apps,"已登录",1. 点击侧栏 Apps,进入 /#/apps,P0
+TC-NAV-006,全局导航,菜单跳转-Tasks,"已登录",1. 点击侧栏 Tasks,进入 /#/tasks,P0
+TC-NAV-007,全局导航,菜单跳转-DataSets,"已登录",1. 点击侧栏 DataSets,进入 /#/datasets-categories（非早期 /datasets 原型）,P0
+TC-NAV-008,全局导航,菜单跳转-Files/Document/Sharing/Settings,"已登录",1. 依次点击 Files、Document、Sharing、Settings,分别进入 /#/files、/#/document、/#/sharing、/#/settings,P0
+TC-NAV-009,全局导航,菜单跳转-Notification,"已登录",1. 点击侧栏 Notification,进入 /#/notifications,P1
+TC-NAV-010,全局导航,Browse 页侧栏 DataSets 高亮,"已登录",1. 进入任意 /#/datasets/:id/browse,侧栏 DataSets 保持高亮,P2
+TC-NAV-011,全局导航,任务详情页侧栏 Tasks 高亮,"已登录；存在任务",1. 进入 /#/tasks/:id,侧栏 Tasks 保持高亮,P2
+TC-NAV-012,全局导航,侧栏全局搜索跳转,"已登录",1. 在侧栏 Search... 输入关键字;2. 按 Enter 或点搜索按钮,跳转 /#/search?q=关键字,P0
+TC-NAV-013,全局搜索,搜索页展示多类型结果,"已登录；库内有任务/数据集/文件/文档数据",1. 打开 /#/search?q=已知关键字;2. 查看结果分区,可展示 tasks/datasets/files/documents 相关结果块；支持 Expand/Collapse,P0
+TC-NAV-014,全局搜索,搜索无结果,"已登录",1. 搜索极不可能命中的关键字,页面正常展示空结果状态无报错,P1
+TC-NAV-015,全局搜索,空关键字搜索,"已登录",1. 不输入关键字直接搜索或访问 /#/search,页面可打开；结果为空或提示输入关键字无崩溃,P2
+TC-NAV-016,Dashboard,首页加载核心区块,"已登录",1. 访问 /#/dashboard;2. 等待数据加载,展示 App 快捷卡、Notifications、ToDo List、Computation Task Statistics、Workspace Storage,P0
+TC-NAV-017,Dashboard,快捷卡跳转有路由应用,"已登录；快捷卡配置了 route",1. 点击带路由的 Quick Start 卡片,跳转到对应应用页（如 /#/t-pro）,P0
+TC-NAV-018,Dashboard,快捷卡无路由提示 Coming soon,"已登录；存在无 route 的应用卡",1. 点击无路由快捷卡,弹出 Coming soon 提示；不跳转空白页,P1
+TC-NAV-019,Dashboard,通知区块查看更多,"已登录",1. 在 Dashboard 通知区点击 view 类入口,进入 /#/notifications,P1
+TC-NAV-020,Dashboard,待办勾选更新,"已登录；存在待办项",1. 勾选/取消 ToDo List 中某项,调用更新成功；刷新后状态保持,P1
+TC-NAV-021,Dashboard,任务统计与存储图表展示,"已登录",1. 查看 Computation Task Statistics 与 Workspace Storage,图表/数值正常渲染无报错（无数据时显示空态）,P1
+TC-NAV-022,通知,通知页 Tab 切换,"已登录",1. 打开 /#/notifications;2. 切换 ALL / Unread / Read,列表按已读状态过滤正确,P0
+TC-NAV-023,通知,通知本地搜索,"已登录；存在多条通知",1. 在 Search notifications... 输入关键字,按 tag/taskId/user/message 本地过滤结果,P1
+TC-NAV-024,通知,标记已读,"已登录；存在未读通知",1. 对未读项执行 View/标记已读操作,该项变为已读；Unread 列表中不再出现（或数量减少）,P0
+TC-NAV-025,通知,通知分页,"已登录；通知数量超过一页",1. 翻页浏览通知,分页切换正常；数据刷新正确,P2
+TC-NAV-026,反馈,普通用户提交意见反馈,"已登录普通用户(role<9)",1. 点击侧栏 Feedback;2. 选择类型（Bug反馈/功能建议/其他）;3. 填写意见文本*;4. 可选填联系信息;5. 提交,提交成功提示；弹窗关闭,P1
+TC-NAV-027,反馈,反馈必填校验,"已登录普通用户",1. 打开意见反馈弹窗;2. 意见文本留空提交,提示意见必填；不提交成功,P1
+TC-NAV-028,全局导航,未登录不显示侧栏,"无登录会话",1. 访问 /#/signin 或 /#/signup,不显示业务侧栏菜单,P0

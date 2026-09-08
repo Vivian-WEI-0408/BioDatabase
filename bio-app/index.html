@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+	<meta charset="UTF-8" />
+	<link rel="icon" href="/favicon.ico" />
+	<meta name="viewport"
+		content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<title>标准元件库 Online</title>
+	<script>
+		window._language = localStorage['_language'];
+		if (!window._language) {
+			if (/zh/.test(navigator.language))
+				window._language = 'zh-cn';
+			else
+				window._language = 'en-us';
+		}
+		localStorage['_language'] = window._language;
+		document.documentElement.lang = window._language;
+		Date = function (Date) {
+			ExtDate.prototype = Date.prototype;
+			ExtDate.now = Date.now;
+			ExtDate.parse = Date.parse;
+			ExtDate.UTC = Date.UTC;
+			return ExtDate;
+
+			function ExtDate() {
+				// 当只有一个参数并且参数类型是字符串时，把字符串中的-替换为/
+				if (arguments.length === 1) {
+					let arg = arguments[0];
+					if (Object.prototype.toString.call(arg) === '[object String]' && arg.indexOf('T') === -1) {
+						arguments[0] = arg.replace(/-/g, "/");
+					}
+				}
+				let bind = Function.bind;
+				let unbind = bind.bind(bind);
+				return new (unbind(Date, null).apply(null, arguments));
+			}
+		}(Date);
+	</script>
+</head>
+
+<body>
+	<input type="file" id="fImage" name="image" accept="image/png,image/jpg,image/jpeg,image/gif" style="display: none;"
+		onchange="ImageUploader.onChange()">
+	<input type="file" id="fFile" multiple name="file" accept="*/*" style="display: none;"
+		onchange="FileUploader.onChange()">
+	<div id="app"></div>
+	<script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
