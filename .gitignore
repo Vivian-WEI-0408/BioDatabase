@@ -16,6 +16,8 @@ eggs/
 .eggs/
 lib/
 lib64/
+!bio-app/api/src/lib/
+!bio-app/api/src/lib/storagePaths.js
 parts/
 sdist/
 var/
