@@ -10,7 +10,7 @@ TC-DS-008,质粒数据库,Browse 排序,"已登录；列表有多行",1. 点击�
 TC-DS-009,质粒数据库,从 Browse 进入详情,"已登录；存在数据行",1. 点击行 View 或详情入口,进入 /#/datasets/:datasetType/:id/detail,P0
 TC-DS-010,质粒数据库,详情页信息区块展示,"已登录；存在元件",1. 打开详情页查看各区块,展示 Basic Information、Culture/Marker、Scar、Sequence、Parent、Features 等（按类型有内容则显示）,P0
 TC-DS-011,质粒数据库,详情页返回列表,"已登录；在详情页",1. 点击 Back to list,返回对应 Browse 列表,P1
-TC-DS-012,质粒数据库,Download Map,"已登录；LabDatabase 网关可用；存在可下载项",1. 在详情页点击 Download Map,发起 LabDatabase 下载（同源 /LabDatabase/...）；浏览器开始下载或打开下载链接,P0
+TC-DS-012,质粒数据库,Download Map,"已登录；记录包含序列",1. 在详情页点击 Download Map,调用 bio-app API /api/datasets/browse/map/:datasetType/:id；浏览器下载 GenBank 文件,P0
 TC-DS-013,质粒数据库,Part 详情 View Test Data,"已登录；打开 Part 详情",1. 点击 View Test Data（若入口存在）,展示测试数据相关内容或面板无报错,P2
 TC-DS-014,质粒数据库,普通用户可见 Upload Map,"已登录普通用户(role=0)",1. 进入 Browse 工具栏,显示 Upload Map 按钮,P0
 TC-DS-015,质粒数据库,普通用户不可见 Batch Upload,"已登录普通用户(role=0)",1. 进入 Browse 工具栏,不显示 Batch Upload 按钮,P0

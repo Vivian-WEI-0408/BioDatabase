@@ -76,18 +76,15 @@ async function importPart(tx, data, context) {
   const sequence = requiredString(data.Level0Sequence ?? data.level0Sequence, 'Level0Sequence');
   const typeLabel = String(data.type ?? 'promoter').trim().toLowerCase();
   const type = PART_TYPE_IDS[typeLabel];
-  if (!type) {
-    throw new DatasetImportError(`Unsupported part type: ${data.type}`);
-  }
   const name = limitedString(requiredString(data.name, 'name'), 100);
   const existing = await tx.partTable.findFirst({ where: { name } });
   if (existing && context.conflictPolicy === 'skip') return { id: existing.partId, name, datasetType: 'part', action: 'skipped' };
   if (existing && context.conflictPolicy !== 'update') throw new DatasetImportError('A record with the same name already exists');
+  if (!existing && !type) throw new DatasetImportError(`Unsupported part type: ${data.type}`);
 
   const record = existing ? await tx.partTable.update({ where: { partId: existing.partId }, data: {
-    lengthInLevel0: sequence.length, level0Sequence: sequence, confirmedSequence: sequence, type,
-    alias: limitedString(data.alias, 100) || null, sourceOrganism: limitedString(data.sourceOrganism ?? data.species, 65535) || null,
-    note: limitedString(data.note, 65535) || null, updateDate: context.now, deletedAt: null, syncStatus: 'active',
+    lengthInLevel0: sequence.length, level0Sequence: sequence, confirmedSequence: sequence,
+    updateDate: context.now,
   } }) : await tx.partTable.create({
     data: {
       name,
@@ -104,15 +101,16 @@ async function importPart(tx, data, context) {
     },
   });
 
-  await tx.partScarTable.upsert({
+  if (!existing) await tx.partScarTable.upsert({
     where: { partId: record.partId }, update: scarData(data), create: { ...scarData(data), partId: record.partId },
   });
 
   const features = context.saveFeature
     ? featureRows(data.feature, 'partId', record.partId)
     : [];
+  // Old feature coordinates must not survive replacement of the sequence.
+  if (existing) await tx.partFeatureTable.deleteMany({ where: { partId: record.partId } });
   if (features.length > 0) {
-    if (existing) await tx.partFeatureTable.deleteMany({ where: { partId: record.partId } });
     await tx.partFeatureTable.createMany({ data: features });
   }
 
@@ -126,8 +124,7 @@ async function importBackbone(tx, data, context) {
   if (existing && context.conflictPolicy === 'skip') return { id: existing.id, name, datasetType: 'backbone', action: 'skipped' };
   if (existing && context.conflictPolicy !== 'update') throw new DatasetImportError('A record with the same name already exists');
   const record = existing ? await tx.backboneTable.update({ where: { id: existing.id }, data: {
-    length: sequence.length, sequence, species: limitedString(data.species ?? data.sourceOrganism, 50) || null,
-    notes: limitedString(data.notes ?? data.note, 65535) || null, alias: limitedString(data.alias, 500) || null, updateDate: context.now, deletedAt: null, syncStatus: 'active',
+    length: sequence.length, sequence, updateDate: context.now,
   } }) : await tx.backboneTable.create({
     data: {
       name,
@@ -147,15 +144,15 @@ async function importBackbone(tx, data, context) {
   });
 
   const cultures = cultureRows(data, 'backboneId', record.id);
+  if (existing) await tx.backboneCultureFunction.deleteMany({ where: { backboneId: record.id, functionType: { in: ['ori', 'marker'] } } });
   if (cultures.length > 0) {
-    if (existing) await tx.backboneCultureFunction.deleteMany({ where: { backboneId: record.id } });
     await tx.backboneCultureFunction.createMany({ data: cultures });
   }
   const features = context.saveFeature
     ? featureRows(data.feature, 'backboneId', record.id)
     : [];
+  if (existing) await tx.backboneFeatureTable.deleteMany({ where: { backboneId: record.id } });
   if (features.length > 0) {
-    if (existing) await tx.backboneFeatureTable.deleteMany({ where: { backboneId: record.id } });
     await tx.backboneFeatureTable.createMany({ data: features });
   }
 
@@ -169,9 +166,7 @@ async function importPlasmid(tx, data, context) {
   if (existing && context.conflictPolicy === 'skip') return { id: existing.plasmidId, name, datasetType: 'plasmid', action: 'skipped' };
   if (existing && context.conflictPolicy !== 'update') throw new DatasetImportError('A record with the same name already exists');
   const record = existing ? await tx.plasmidNeed.update({ where: { plasmidId: existing.plasmidId }, data: {
-    level: limitedString(data.level, 10), length: sequence.length, sequenceConfirm: sequence,
-    note: limitedString(data.note, 500) || null, alias: limitedString(data.alias, 500) || null,
-    customParentInformation: limitedString(data.customParentInformation, 65535) || null, updateDate: context.now, deletedAt: null, syncStatus: 'active',
+    length: sequence.length, sequenceConfirm: sequence, updateDate: context.now,
   } }) : await tx.plasmidNeed.create({
     data: {
       name,
@@ -192,15 +187,15 @@ async function importPlasmid(tx, data, context) {
   });
 
   const cultures = cultureRows(data, 'plasmidId', record.plasmidId);
+  if (existing) await tx.plasmidCultureFunction.deleteMany({ where: { plasmidId: record.plasmidId, functionType: { in: ['ori', 'marker'] } } });
   if (cultures.length > 0) {
-    if (existing) await tx.plasmidCultureFunction.deleteMany({ where: { plasmidId: record.plasmidId } });
     await tx.plasmidCultureFunction.createMany({ data: cultures });
   }
   const features = context.saveFeature
     ? featureRows(data.feature, 'plasmidId', record.plasmidId)
     : [];
+  if (existing) await tx.plasmidFeatureTable.deleteMany({ where: { plasmidId: record.plasmidId } });
   if (features.length > 0) {
-    if (existing) await tx.plasmidFeatureTable.deleteMany({ where: { plasmidId: record.plasmidId } });
     await tx.plasmidFeatureTable.createMany({ data: features });
   }
 

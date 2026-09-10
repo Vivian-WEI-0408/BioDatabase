@@ -597,7 +597,8 @@ export default {
         }
         if (data.options?.requiresConfirmation) {
           const conflicts = data.options.conflicts || [];
-          const updateAll = window.confirm(`The following records already exist:\n${conflicts.join('\n')}\n\nOK: Update all existing records\nCancel: Skip all existing records`);
+          const choice = await Swal.fire({ title: '发现重名记录', text: `${conflicts.join(', ')}。请选择如何处理重名记录，新记录仍会继续上传。`, showDenyButton: true, confirmButtonText: '全部更新', denyButtonText: '全部跳过', allowOutsideClick: false, allowEscapeKey: false });
+          const updateAll = choice.isConfirmed;
           this.resetUploadState();
           await this.uploadMap({ files, datasetType, saveFeature, conflictPolicy: updateAll ? 'update' : 'skip' });
           return;
@@ -653,7 +654,8 @@ export default {
 
         if (data.options?.requiresConfirmation) {
           const conflicts = data.options.conflicts || [];
-          const updateAll = window.confirm(`The following records already exist:\n${conflicts.join('\n')}\n\nOK: Update all existing records\nCancel: Skip all existing records`);
+          const choice = await Swal.fire({ title: '发现重名记录', text: `${conflicts.join(', ')}。请选择如何处理重名记录，新记录仍会继续上传。`, showDenyButton: true, confirmButtonText: '全部更新', denyButtonText: '全部跳过', allowOutsideClick: false, allowEscapeKey: false });
+          const updateAll = choice.isConfirmed;
           this.resetUploadState();
           await this.uploadBatch({ file, conflictPolicy: updateAll ? 'update' : 'skip' });
           return;

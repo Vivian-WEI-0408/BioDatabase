@@ -227,7 +227,6 @@ TFPlot Flask 默认地址为 `http://127.0.0.1:8101`，Bokeh 默认地址为 `ht
 VITE_API_PROXY_TARGET=http://127.0.0.1:9092/
 VITE_WEBDB_PROXY_TARGET=http://127.0.0.1:9092/
 VITE_STATIC_PROXY_TARGET=http://127.0.0.1:9092/
-VITE_LABDB_PROXY_TARGET=http://127.0.0.1:8000/
 VITE_TPLOT_API_PROXY_TARGET=http://127.0.0.1:8101/
 VITE_TPRO_API_PROXY_TARGET=http://127.0.0.1:8004/
 ```
@@ -247,7 +246,6 @@ npm run dev
 | 浏览器路径 | 目标服务 |
 | --- | --- |
 | `/api/*`、`/WebDatabase/*`、`/res/*` | bio-app API `9092` |
-| `/LabDatabase/*` | MapProcess `8000` |
 | `/tplot-api/*` | TFPlot Flask `8101` |
 | `/t-pro-api/*`、`/t-pro/*` | 外部 T-Pro 服务，默认 `8004` |
 

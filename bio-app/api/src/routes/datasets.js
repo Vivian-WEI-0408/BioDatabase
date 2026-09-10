@@ -21,6 +21,7 @@ const {
   resolveTemplatePath,
 } = require('../services/datasetUploadStore');
 const { canManageDatasetRows } = require('../constants/roles');
+const { getDatasetMap } = require('../services/datasetMapExport');
 
 const router = express.Router();
 
@@ -41,10 +42,10 @@ function formatMulterError(error) {
     return 'File exceeds maximum upload size';
   }
   if (error.code === 'LIMIT_FILE_COUNT') {
-    return 'Too many files uploaded';
+    return error.message || 'Too many files uploaded';
   }
   if (error.code === 'LIMIT_UNEXPECTED_FILE') {
-    return 'Unexpected upload field';
+    return error.message || 'Unexpected upload field';
   }
   return error.message || 'Upload failed';
 }
@@ -169,6 +170,32 @@ router.post('/browse/detail', async (req, res) => {
   } catch (error) {
     console.error('browse/detail failed:', error);
     res.json(output(null, 0, 'Failed to load record detail'));
+  }
+});
+
+router.get('/browse/map/:datasetType/:id', async (req, res) => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const datasetType = normalizeDatasetType(req.params.datasetType);
+  if (!datasetType) {
+    res.status(400).json(output(null, 0, 'Invalid datasetType'));
+    return;
+  }
+
+  try {
+    const file = await getDatasetMap(datasetType, req.params.id);
+    if (!file) {
+      res.status(404).json(output(null, 0, 'Record not found'));
+      return;
+    }
+    res.setHeader('Content-Type', 'application/genbank; charset=utf-8');
+    res.attachment(file.filename);
+    res.send(file.content);
+  } catch (error) {
+    const message = error?.message || 'Failed to export map';
+    const status = /no sequence|invalid sequence/i.test(message) ? 422 : 500;
+    res.status(status).json(output(null, 0, message));
   }
 });
 

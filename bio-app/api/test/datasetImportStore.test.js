@@ -7,12 +7,12 @@ const {
   importParsedDatasetResults,
 } = require('../src/services/datasetImportStore');
 
-function createFakePrisma() {
+function createFakePrisma(existing = null) {
   const calls = [];
   let nextId = 10;
   const model = (name, idField) => ({
     async findFirst() {
-      return null;
+      return existing;
     },
     async create({ data }) {
       calls.push({ model: name, action: 'create', data });
@@ -23,7 +23,9 @@ function createFakePrisma() {
       calls.push({ model: name, action: 'createMany', data });
       return { count: data.length };
     },
-    async upsert({ data }) {
+    async upsert({ where, update, create }) {
+      assert.ok(where && update && create);
+      const data = existing ? update : create;
       calls.push({ model: name, action: 'upsert', data });
       nextId += 1;
       return { ...data, [idField]: nextId };
@@ -63,6 +65,58 @@ function parserResult(data) {
     status: 'completed',
     result: { results: [{ success: true, data }] },
   };
+}
+
+for (const [datasetType, model, idField, sequenceField, lengthField] of [
+  ['part', 'partTable', 'partId', 'level0Sequence', 'lengthInLevel0'],
+  ['backbone', 'backboneTable', 'id', 'sequence', 'length'],
+  ['plasmid', 'plasmidNeed', 'plasmidId', 'sequenceConfirm', 'length'],
+]) {
+  for (const saveFeature of [true, false]) {
+    for (const hasAnnotations of [true, false]) {
+      test(`${datasetType} overwrite is sequence-only (saveFeature=${saveFeature}, annotations=${hasAnnotations})`, async () => {
+        const prismaClient = createFakePrisma({ [idField]: 7, name: 'existing' });
+        await importParsedDatasetResults({
+          datasetType, conflictPolicy: 'update', saveFeature, prismaClient,
+          parserResult: parserResult({
+            name: 'existing', sequence: 'ATGC', Level0Sequence: 'ATGC',
+            type: 'ignored-on-update', alias: 'must not replace', note: 'must not replace',
+            species: 'must not replace', level: '9', customParentInformation: 'must not replace',
+            bsai: 'new scar',
+            feature: hasAnnotations ? [{ start_position: 0, end_position: 4, label: 'new' }] : [],
+            ori: hasAnnotations ? ['new ori'] : [], marker: [],
+          }),
+        });
+        const update = prismaClient.calls.find(c => c.model === model && c.action === 'update');
+        const expected = [sequenceField, lengthField, 'updateDate'];
+        if (datasetType === 'part') expected.push('confirmedSequence');
+        assert.deepEqual(Object.keys(update.data).sort(), expected.sort());
+        assert.equal(update.data[sequenceField], 'ATGC');
+        assert.equal(update.data[lengthField], 4);
+        if (datasetType === 'part') assert.equal(update.data.confirmedSequence, 'ATGC');
+        const featureCalls = prismaClient.calls.filter(c => c.model === `${datasetType}FeatureTable`);
+        assert.deepEqual(featureCalls.map(c => c.action), saveFeature && hasAnnotations
+          ? ['deleteMany', 'createMany'] : ['deleteMany']);
+        assert.deepEqual(featureCalls[0].where, { [datasetType === 'backbone' ? 'backboneId' : idField]: 7 });
+        const scarCalls = prismaClient.calls.filter(c => c.model === `${datasetType}ScarTable`);
+        assert.equal(scarCalls.length, datasetType === 'part' ? 0 : 1);
+        if (datasetType !== 'part') {
+          assert.deepEqual(scarCalls[0].data, { bsai: 'new scar', bsmbi: '', bbsi: '', aari: '', sapi: '' });
+          const cultureCalls = prismaClient.calls.filter(c => c.model === `${datasetType}CultureFunction`);
+          assert.deepEqual(cultureCalls.map(c => c.action), hasAnnotations ? ['deleteMany', 'createMany'] : ['deleteMany']);
+          assert.deepEqual(cultureCalls[0].where.functionType, { in: ['ori', 'marker'] });
+        }
+      });
+    }
+  }
+  test(`${datasetType} skip does not write`, async () => {
+    const prismaClient = createFakePrisma({ [idField]: 7, name: 'existing' });
+    await importParsedDatasetResults({
+      datasetType, conflictPolicy: 'skip', prismaClient,
+      parserResult: parserResult({ name: 'existing', sequence: 'ATGC', Level0Sequence: 'ATGC' }),
+    });
+    assert.deepEqual(prismaClient.calls, []);
+  });
 }
 
 test('featureRows maps parser coordinates and truncates legacy varchar fields', () => {

@@ -17,14 +17,6 @@
           Download Map
         </button>
         <button
-          v-if="datasetType === 'part'"
-          type="button"
-          class="dataset-item-page__edit-btn"
-          @click="viewTestData"
-        >
-          View Test Data
-        </button>
-        <button
           v-if="canEditRecord"
           type="button"
           class="dataset-item-page__edit-btn"
@@ -353,24 +345,22 @@ export default {
     },
     downloadMapPath() {
       const id = this.detail?.id ?? this.recordId;
-      if (this.datasetType === 'part') {
-        return `/LabDatabase/downloadPartMap/${id}`;
-      }
-      if (this.datasetType === 'backbone') {
-        return `/LabDatabase/downloadBackboneMap/${id}`;
-      }
-      return `/LabDatabase/downloadPlasmidMap/${id}`;
+      return `datasets/browse/map/${encodeURIComponent(this.datasetType)}/${encodeURIComponent(id)}`;
     },
-    downloadMap() {
-      window.location.href = this.downloadMapPath();
-    },
-    viewTestData() {
-      const name = this.detail?.name;
-      if (!name) {
-        alert('Part name is missing.');
-        return;
+    async downloadMap() {
+      try {
+        const response = await axios.get(this.downloadMapPath(), { responseType: 'blob' });
+        const blobUrl = URL.createObjectURL(response.data);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `${this.detail?.name || `${this.datasetType}-${this.recordId}`}.gb`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(blobUrl);
+      } catch (error) {
+        alert('Failed to download map. The record may not contain a sequence.');
       }
-      window.location.href = `/LabDatabase/FetchExperienceDetail/${encodeURIComponent(name)}`;
     },
     async onDelete() {
       if (!this.canDeleteRecord) {

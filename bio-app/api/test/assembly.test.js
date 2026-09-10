@@ -8,7 +8,7 @@ const { cutEvents, simulateGoldenGate, stickyEndsCompatible } = require('../src/
 const { writeReports } = require('../src/services/assembly/artifacts');
 const { parseAssemblyWorkbook } = require('../src/services/assembly/excel');
 const { CCDB_SEQUENCE, determineTargetEnzyme } = require('../src/services/assembly/targetEnzyme');
-const { containsEnzymeRecognitionSite, selectAssemblyFragments } = require('../src/services/assembly/assemblyService');
+const { buildAssemblyFeatures, containsEnzymeRecognitionSite, selectAssemblyFragments } = require('../src/services/assembly/assemblyService');
 
 async function testDirectory(prefix) {
   const base = path.join(__dirname, '.tmp');
@@ -63,6 +63,31 @@ test('multiple distinct circular products are rejected', () => {
   assert.throws(() => simulateGoldenGate(records, 'BbsI', {
     selectFragments: (record, fragments) => fragments.filter((fragment) => fragment.sequence.includes(record.id === 'a' ? 'CCCC' : record.id === 'b' ? 'GGGG' : 'TTTT')),
   }), /Assembly is ambiguous/);
+});
+
+test('assembly annotations omit whole-backbone feature and retain all internal features', () => {
+  const fragments = [
+    {
+      recordName: 'vector', kind: 'backbone', start: 2, sequence: 'CCCCCC',
+      source: { sequence: 'AACCCCCCGG', features: [{ featureStart: 3, featureEnd: 6, featureType: 'rep_origin', featureLabel: 'ori' }] },
+    },
+    {
+      recordName: 'promoter', kind: 'part', start: 0, sequence: 'AAA',
+      source: { sequence: 'AAA', features: [{ featureStart: 0, featureEnd: 2, featureType: 'promoter', featureLabel: 'P1' }] },
+    },
+    {
+      recordName: 'insert', kind: 'plasmid', start: 0, sequence: 'TTTT',
+      source: { sequence: 'TTTT', features: [{ featureStart: 1, featureEnd: 4, featureType: 'CDS', featureLabel: 'gene' }] },
+    },
+  ];
+  const features = buildAssemblyFeatures(fragments);
+  assert.equal(features.some((item) => item.scope === 'record' && item.sourceKind === 'backbone'), false);
+  assert.deepEqual(features.filter((item) => item.scope === 'record').map((item) => [item.label, item.start, item.end]), [
+    ['promoter', 6, 9], ['insert', 9, 13],
+  ]);
+  assert.deepEqual(features.filter((item) => item.scope === 'internal').map((item) => [item.label, item.start, item.end]), [
+    ['ori', 1, 4], ['P1', 6, 8], ['gene', 10, 13],
+  ]);
 });
 
 test('writes the legacy report file set and ZIP archive', async () => {

@@ -9,6 +9,7 @@ const {
 const { enqueueDatasetUploadTask } = require('./datasetUploadRunner');
 const {
   cleanupUploadFiles,
+  cleanupMulterStagingFiles,
   getFileExtension,
   persistUploadedFiles,
 } = require('./datasetUploadFiles');
@@ -177,6 +178,16 @@ async function createMapUploadTask(user, { datasetType, saveFeature = false, fil
   const policy = normalizeConflictPolicy(conflictPolicy);
   if (conflicts.length && !policy) return { requiresConfirmation: true, conflicts, datasetType: normalizedType };
 
+  const skippedFiles = policy === 'skip' ? files.filter((file) => conflicts.includes(
+    path.parse(file.originalname || file.filename || '').name.slice(0, 20),
+  )) : [];
+  const pendingFiles = files.filter((file) => !skippedFiles.includes(file));
+  const skippedRecords = skippedFiles.map((file) => ({
+    name: path.parse(file.originalname || file.filename || '').name.slice(0, 20),
+    action: 'skipped',
+  }));
+  await cleanupMulterStagingFiles(skippedFiles);
+
   const task = await createTask(user.id, {
     appId: LAB_DATABASE_APP_ID,
     name: buildMapTaskName(normalizedType, files.length),
@@ -194,7 +205,7 @@ async function createMapUploadTask(user, { datasetType, saveFeature = false, fil
   }
 
   const taskId = parseTaskId(task.id);
-  const persistedFiles = await persistUploadedFiles(taskId, files);
+  const persistedFiles = await persistUploadedFiles(taskId, pendingFiles);
 
   await prisma.task.update({
     where: { id: taskId },
@@ -204,7 +215,7 @@ async function createMapUploadTask(user, { datasetType, saveFeature = false, fil
           uploadKind: 'map',
           datasetType: normalizedType,
           saveFeature: parseBoolean(saveFeature),
-          files: persistedFiles, conflictPolicy: policy,
+          files: persistedFiles, conflictPolicy: policy, skippedRecords,
         },
       }),
     },

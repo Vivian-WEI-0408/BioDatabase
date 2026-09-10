@@ -126,10 +126,21 @@ async function runDatasetUploadTask(taskId) {
       return;
     }
 
+    const files = Array.isArray(apiParams.files) ? apiParams.files : [];
+    const skippedRecords = Array.isArray(apiParams.skippedRecords) ? apiParams.skippedRecords : [];
+    if (!files.length && skippedRecords.length) {
+      await completeTask(numericId, {
+        progress: 100, datasetType: apiParams.datasetType,
+        created: 0, updated: 0, skipped: skippedRecords.length, failed: 0,
+        total: skippedRecords.length, records: skippedRecords,
+        message: `全部 ${skippedRecords.length} 个重名图谱已跳过，未更新任何记录。`,
+      });
+      return;
+    }
     const parserResult = await parseDatasetUpload({
       datasetType: apiParams.datasetType,
       saveFeature: Boolean(apiParams.saveFeature),
-      files: Array.isArray(apiParams.files) ? apiParams.files : [],
+      files,
     });
     if (parserResult.status !== 'completed') {
       const errors = Array.isArray(parserResult.errors) ? parserResult.errors : [];
@@ -142,6 +153,7 @@ async function runDatasetUploadTask(taskId) {
       user: task.user,
       conflictPolicy: apiParams.conflictPolicy,
     });
+    imported.push(...skippedRecords);
     const created = imported.filter((item) => item.action === 'created').length;
     const updated = imported.filter((item) => item.action === 'updated').length;
     const skipped = imported.filter((item) => item.action === 'skipped').length;

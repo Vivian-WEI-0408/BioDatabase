@@ -8,7 +8,6 @@ export default defineConfig(({ mode }) => {
   const TPRO_API_PROXY_TARGET = env.VITE_TPRO_API_PROXY_TARGET || 'http://127.0.0.1:8004/'
   const TPRO_LEGACY_PROXY_TARGET = env.VITE_TPRO_LEGACY_PROXY_TARGET || TPRO_API_PROXY_TARGET
   const STATIC_PROXY_TARGET = env.VITE_STATIC_PROXY_TARGET || API_PROXY_TARGET
-  const LABDB_PROXY_TARGET = env.VITE_LABDB_PROXY_TARGET || 'http://127.0.0.1:8000/'
   const WEBDB_PROXY_TARGET = env.VITE_WEBDB_PROXY_TARGET || API_PROXY_TARGET
   const TPLOT_API_PROXY_TARGET = env.VITE_TPLOT_API_PROXY_TARGET || 'http://127.0.0.1:8101/'
 
@@ -31,10 +30,6 @@ export default defineConfig(({ mode }) => {
           target: TPRO_LEGACY_PROXY_TARGET,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/t-pro/, ''),
-        },
-        '/LabDatabase': {
-          target: LABDB_PROXY_TARGET,
-          changeOrigin: true,
         },
         '/WebDatabase': {
           target: WEBDB_PROXY_TARGET,

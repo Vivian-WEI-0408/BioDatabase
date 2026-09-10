@@ -8,14 +8,21 @@ function safeName(value) {
   return String(value || 'assembly').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').slice(0, 120) || 'assembly';
 }
 
-function genbankText(name, sequence, fragments = []) {
+function genbankText(name, sequence, fragments = [], annotations = null) {
   const now = new Date();
   const date = `${String(now.getDate()).padStart(2, '0')}-${['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][now.getMonth()]}-${now.getFullYear()}`;
-  const features = fragments.map((fragment, index) => {
+  const sourceAnnotations = Array.isArray(annotations) ? annotations : fragments.map((fragment, index) => {
     const previous = fragments.slice(0, index).reduce((sum, item) => sum + item.sequence.length, 0);
-    const start = previous + 1;
-    const end = previous + fragment.sequence.length;
-    return `     misc_feature    ${start}..${end}\n                     /label="${String(fragment.recordName).replace(/"/g, "'")}"\n                     /note="source=${fragment.kind}; left=${fragment.left}; right=${fragment.right}"`;
+    return { start: previous, end: previous + fragment.sequence.length, type: 'misc_feature', label: fragment.recordName,
+      note: `source=${fragment.kind}; left=${fragment.left}; right=${fragment.right}` };
+  });
+  const features = sourceAnnotations.map((feature) => {
+    const type = String(feature.type || 'misc_feature').replace(/\s+/g, '_').slice(0, 15).padEnd(16);
+    const qualifiers = [`                     /label="${String(feature.label || '').replace(/"/g, "'")}"`];
+    if (feature.color) qualifiers.push(`                     /color="${String(feature.color).replace(/"/g, "'")}"`);
+    if (feature.apeInfo) qualifiers.push(`                     /ApEinfo_fwdcolor="${String(feature.apeInfo).replace(/"/g, "'")}"`);
+    if (feature.note) qualifiers.push(`                     /note="${String(feature.note).replace(/"/g, "'")}"`);
+    return `     ${type}${feature.start + 1}..${feature.end}\n${qualifiers.join('\n')}`;
   }).join('\n');
   const origin = sequence.toLowerCase().match(/.{1,60}/g).map((line, index) => {
     const groups = line.match(/.{1,10}/g).join(' ');
@@ -65,7 +72,7 @@ async function writeReports(outputDir, name, result) {
     archive: path.join(outputDir, `${base}_assembly_results.zip`),
   };
   await Promise.all([
-    fsp.writeFile(files.genbank, genbankText(base, result.sequence, result.fragments)),
+    fsp.writeFile(files.genbank, genbankText(base, result.sequence, result.fragments, result.features)),
     fsp.writeFile(files.summary, summaryCsv(result)),
     fsp.writeFile(files.warnings, 'message\r\n'),
     writePdf(files.report, `${base} assembly report`, (doc) => {

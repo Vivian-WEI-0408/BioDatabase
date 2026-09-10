@@ -11,6 +11,7 @@ from . import snapgene_reader
 from .ControllerModule import FittingLabels
 from .ScarIdentify import scarPosition,scarFunction
 from .LabDatabaseException import LabDatabaseException
+from .genbank_compat import compatible_genbank_stream
 
 
 def _unique_nonempty_items(items):
@@ -62,7 +63,7 @@ def process_map_file(upload_map, file_name, upload_type):
                 break
         elif(file_name[1] == "gb" or file_name[1] == "gbk" or file_name[1] == "ape" or file_name[1] == "str"):
             # try:
-            records = parse(upload_map, "genbank")
+            records = parse(compatible_genbank_stream(upload_map), "genbank")
             for record in records:
                 Sequence = str(record.seq)
                 FeatureList = record.features

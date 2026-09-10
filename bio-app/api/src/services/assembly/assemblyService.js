@@ -104,9 +104,11 @@ async function loadInputs(spec, enzymeHint) {
       // The legacy service only synthesizes adapters for BbsI/BsaI. Other
       // enzymes must already be present in the stored Level-0 sequence.
       if (['BbsI', 'BsaI'].includes(enzyme)) {
-        record.sequence = processPartSequence({ sequence: record.sequence, type: record.partType, enzyme,
+        const processed = processPartSequence({ sequence: record.sequence, type: record.partType, enzyme,
           source: record.source, alias: orderedParts.find((row) => row.partId === record.entityId)?.alias,
           name: record.name, startScar: record.startScar, endScar: record.endScar });
+        record.featureCoordinateOffset = processed.indexOf(record.originalSequence);
+        record.sequence = processed;
       }
     }
   });
@@ -155,6 +157,74 @@ function scarCounts(sequence) {
   return Object.fromEntries(Object.keys(ENZYMES).map((enzyme) => [enzyme, cutEvents(sequence, enzyme).length]));
 }
 
+function circularSegments(start, length, totalLength) {
+  const normalizedStart = ((start % totalLength) + totalLength) % totalLength;
+  const firstLength = Math.min(length, totalLength - normalizedStart);
+  const segments = [{ sourceStart: normalizedStart, sourceEnd: normalizedStart + firstLength, localStart: 0 }];
+  if (length > firstLength) segments.push({ sourceStart: 0, sourceEnd: length - firstLength, localStart: firstLength });
+  return segments;
+}
+
+function projectFeature(feature, fragment) {
+  const sourceLength = normalizeSequence(fragment.source.sequence).length;
+  if (!sourceLength) return [];
+  const coordinateOffset = Number.isInteger(fragment.source.featureCoordinateOffset)
+    ? fragment.source.featureCoordinateOffset : 0;
+  let featureStart = Number(feature.featureStart) + coordinateOffset;
+  let featureEnd = Number(feature.featureEnd) + coordinateOffset;
+  if (!Number.isFinite(featureStart) || !Number.isFinite(featureEnd) || featureEnd <= featureStart) return [];
+  featureStart = Math.max(0, Math.trunc(featureStart));
+  featureEnd = Math.min(sourceLength, Math.trunc(featureEnd));
+  if (featureEnd <= featureStart) return [];
+
+  return circularSegments(fragment.start, fragment.sequence.length, sourceLength).flatMap((segment) => {
+    const start = Math.max(featureStart, segment.sourceStart);
+    const end = Math.min(featureEnd, segment.sourceEnd);
+    if (end <= start) return [];
+    return [{
+      start: segment.localStart + start - segment.sourceStart,
+      end: segment.localStart + end - segment.sourceStart,
+    }];
+  });
+}
+
+function buildAssemblyFeatures(fragments) {
+  const result = [];
+  let assemblyOffset = 0;
+  for (const fragment of fragments) {
+    // Backbone contributes its internal annotations only. Parts and plasmids
+    // additionally receive one annotation spanning their complete main fragment.
+    if (fragment.kind === 'part' || fragment.kind === 'plasmid') {
+      result.push({
+        start: assemblyOffset,
+        end: assemblyOffset + fragment.sequence.length,
+        type: 'misc_feature',
+        label: fragment.recordName,
+        color: '',
+        apeInfo: '',
+        sourceKind: fragment.kind,
+        scope: 'record',
+      });
+    }
+    for (const feature of fragment.source.features || []) {
+      for (const projected of projectFeature(feature, fragment)) {
+        result.push({
+          start: assemblyOffset + projected.start,
+          end: assemblyOffset + projected.end,
+          type: feature.featureType || 'misc_feature',
+          label: feature.featureLabel || '',
+          color: feature.featureColor || '',
+          apeInfo: feature.featureApeinfo || feature.featureColor || '',
+          sourceKind: fragment.kind,
+          scope: 'internal',
+        });
+      }
+    }
+    assemblyOffset += fragment.sequence.length;
+  }
+  return result;
+}
+
 async function persistPlasmid(userId, name, metadata, result) {
   const shortName = safeName(name).slice(0, 20);
   return prisma.$transaction(async (tx) => {
@@ -177,6 +247,17 @@ async function persistPlasmid(userId, name, metadata, result) {
     if (partIds.length) await tx.parentPartTable.createMany({ data: partIds.map((parentPartId) => ({ parentPartId, sonPlasmidId: plasmid.plasmidId })) });
     if (backboneIds.length) await tx.parentBackboneTable.createMany({ data: backboneIds.map((parentBackboneId) => ({ parentBackboneId, sonPlasmidId: plasmid.plasmidId })) });
     if (parentPlasmidIds.length) await tx.parentPlasmidTable.createMany({ data: parentPlasmidIds.map((parentPlasmidId) => ({ parentPlasmidId, sonPlasmidId: plasmid.plasmidId })) });
+    if (result.features?.length) {
+      await tx.plasmidFeatureTable.createMany({ data: result.features.map((feature) => ({
+        plasmidId: plasmid.plasmidId,
+        featureStart: feature.start,
+        featureEnd: feature.end,
+        featureType: String(feature.type || 'misc_feature').slice(0, 50),
+        featureLabel: String(feature.label || '').slice(0, 50),
+        featureColor: String(feature.color || '').slice(0, 50),
+        featureApeinfo: String(feature.apeInfo || feature.color || '').slice(0, 50),
+      })) });
+    }
     return plasmid;
   });
 }
@@ -185,6 +266,7 @@ async function runAssembly(userId, taskId, spec) {
   const name = String(spec.name || spec.uuid || `assembly-${taskId}`).trim();
   const loaded = await loadInputs(spec, spec.enzyme || 'auto');
   const result = simulateGoldenGate(loaded.records, loaded.enzyme, { selectFragments: selectAssemblyFragments });
+  result.features = buildAssemblyFeatures(result.fragments);
   if (locateCcdb(result.sequence)) throw new Error('Assembly validation failed: ccdB dropout remains in the product');
   const remainingSites = cutEvents(result.sequence, loaded.enzyme).length;
   if (remainingSites) throw new Error(`Assembly validation failed: product still contains ${remainingSites} ${loaded.enzyme} cut site(s)`);
@@ -208,4 +290,4 @@ async function runAssembly(userId, taskId, spec) {
   };
 }
 
-module.exports = { containsEnzymeRecognitionSite, loadInputs, persistPlasmid, runAssembly, scarCounts, selectAssemblyFragments, wrapPart };
+module.exports = { buildAssemblyFeatures, containsEnzymeRecognitionSite, loadInputs, persistPlasmid, projectFeature, runAssembly, scarCounts, selectAssemblyFragments, wrapPart };

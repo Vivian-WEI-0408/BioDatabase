@@ -99,7 +99,9 @@ async function parseDatasetUploadHttp(payload) {
       }
 
       const content = await fs.readFile(file.path);
-      const filename = file.name || path.basename(file.path);
+      // The parser derives the database record name from this filename.
+      // Keep the staging prefix (e.g. 1_) on disk only, never in the record name.
+      const filename = file.originalName || file.name || path.basename(file.path);
       form.append('files', new Blob([content]), filename);
     }
 

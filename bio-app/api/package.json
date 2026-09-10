@@ -4,7 +4,7 @@
   "private": true,
   "main": "src/server.js",
   "scripts": {
-    "test": "node --test test/assembly.test.js test/datasetBatchExcelStore.test.js test/datasetImportStore.test.js",
+    "test": "node --test test/assembly.test.js test/datasetBatchExcelStore.test.js test/datasetImportStore.test.js test/datasetMapExport.test.js test/datasetParserClient.test.js",
     "test:api:all": "node --test test/all-api.smoke.test.js",
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
